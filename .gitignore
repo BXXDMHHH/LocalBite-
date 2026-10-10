@@ -4,3 +4,7 @@ local.properties
 **/build/
 *.iml
 .DS_Store
+
+# 签名密钥与本地签名配置不入库（公开仓库安全）
+keystore/
+keystore.properties

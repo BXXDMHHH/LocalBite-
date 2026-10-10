@@ -1,9 +1,17 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
 }
+
+// 本地签名配置：keystore.properties 不入库，缺失时 release 回退 debug 签名，
+// 保证他人 clone 后也能直接构建；正式发布需自行配置该文件。
+val releaseProps: Properties? =
+    rootProject.file("keystore.properties").takeIf { it.exists() }
+        ?.inputStream()?.use { Properties().apply { load(it) } }
 
 android {
     namespace = "com.localbite.app"
@@ -17,10 +25,10 @@ android {
     }
     signingConfigs {
         create("release") {
-            storeFile = rootProject.file("keystore/localbite.keystore")
-            storePassword = "localbite2026"
-            keyAlias = "localbite"
-            keyPassword = "localbite2026"
+            storeFile = releaseProps?.getProperty("storeFile")?.let { rootProject.file(it) }
+            storePassword = releaseProps?.getProperty("storePassword")
+            keyAlias = releaseProps?.getProperty("keyAlias")
+            keyPassword = releaseProps?.getProperty("keyPassword")
         }
     }
     buildFeatures { compose = true }
@@ -32,7 +40,10 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (releaseProps?.getProperty("storeFile") != null)
+                signingConfigs.getByName("release")
+            else
+                signingConfigs.getByName("debug")
         }
     }
 }
@@ -48,6 +59,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
+    implementation("com.google.android.gms:play-services-analytics-impl:18.2.0")
     ksp("androidx.room:room-compiler:2.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
