@@ -8,3 +8,5 @@ local.properties
 # 签名密钥与本地签名配置不入库（公开仓库安全）
 keystore/
 keystore.properties
+
+.kotlin/
